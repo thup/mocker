@@ -187,7 +187,7 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 					.stream()
 					.filter(parameter -> "body".equals(parameter.getIn()))
 					.map(parameter -> {
-						/*ApiParameter apiParameter = new ApiParameter();
+						ApiParameter apiParameter = new ApiParameter();
 						apiParameter.setExtra(assemblySwaggerSchema(parameter.getItems(), apiParmeterMap));
 						apiParameter.setName(parameter.getName());
 						apiParameter.setDescription(parameter.getDescription());
@@ -196,9 +196,8 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 
 						//模仿response设置body的field字段
 						apiParameter.setNewFields(assemblySwaggerSchema(parameter.getSchema(), apiParmeterMap));
-*/
 
-						ApiParameter apiParameter = assemblySwaggerSchema(parameter.getSchema(), apiParmeterMap);
+						//ApiParameter apiParameter = assemblySwaggerSchema(parameter.getSchema(), apiParmeterMap);
 						return apiParameter;
 					})
 					.collect(Collectors.toList());
