@@ -28,9 +28,9 @@ import com.google.gson.Gson;
 public class SwaggerPluginHandler implements AbstractPluginHandler{
 
 	private static final String SWAGGER_DEFINITION_PREFIX = "#/definitions/";
-	
+
 	private static final String SWAGGER_RESPONSE_PREFIX = "#/responses/";
-	
+
 	@Override
 	public List<Api> extract(Plugin plugin) throws MockerException, IOException{
 		if(! (plugin instanceof SwaggerPlugin)) {
@@ -46,28 +46,31 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 			throw new MockerException("docs is blank.");
 		}
 		List<Api> apis = new ArrayList<Api>();
-		
+
 		Gson gson = new Gson();
 		SwaggerApi swaggerApi = gson.fromJson(docs, SwaggerApi.class);
+
+		System.out.println("== " + gson.toJson(swaggerApi));
+
 		if(! CollectionUtils.isEmpty(swaggerApi.getPaths())) {
-			
+
 			Map<String, SwaggerObject> definitions = swaggerApi.getDefinitions();
 			Map<String, SwaggerResponse> responses = swaggerApi.getResponses();
-			
+
 			List<ApiParameter> apiParameters = assemblyDefinitions(definitions);
 			Map<String, ApiParameter> apiParmeterMap = MapUtils.toMap(parameter -> {
 				return SWAGGER_DEFINITION_PREFIX + parameter.getName();
 			}, apiParameters);
-			
+
 			List<ApiParameter> apiReponses = assemblyResponses(responses, apiParmeterMap);
 			Map<String, ApiParameter> responsesMap = MapUtils.toMap(parameter -> {
 				return SWAGGER_RESPONSE_PREFIX + parameter.getName();
 			}, apiReponses);
-			
+
 			//merge
 			apiParmeterMap.putAll(responsesMap);
 			assemblyApiParameterFields(apiParmeterMap, definitions);
-			
+
 			swaggerApi.getPaths().forEach((url, paths) -> {
 				if(! CollectionUtils.isEmpty(paths)) {
 					paths.forEach((method, path) -> {
@@ -78,7 +81,9 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 						api.setHeaders(assemblyApiHeader(path, definitions));
 						api.setQueryParameters(assemblyQueryParameters(path, definitions, apiParmeterMap));
 						api.setFormParameters(assemblyFormParameters(path, definitions, apiParmeterMap));
-						
+
+						api.setBody(assemblyBodyParameters(path, definitions, apiParmeterMap));
+
 						if(! CollectionUtils.isEmpty(path.getResponses())) {
 							Map<String, ApiParameter> pathResponses = new HashMap<String, ApiParameter>();
 							path.getResponses().forEach((code, response) -> {
@@ -92,6 +97,7 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 			});
 		}
 
+		System.out.println("== " + gson.toJson(apis));
 		return apis;
 	}
 
@@ -146,7 +152,31 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 		}
 		return MapUtils.toMap(ApiParameter::getName, parameters);
 	}
-	
+
+	private Map<String, ApiParameter> assemblyBodyParameters(SwaggerPath path, Map<String, SwaggerObject> definitions, Map<String, ApiParameter> apiParmeterMap){
+		List<ApiParameter> parameters = new ArrayList<ApiParameter>();
+		if(! CollectionUtils.isEmpty(path.getParameters())) {
+			parameters = path.getParameters()
+					.stream()
+					.filter(parameter -> "body".equals(parameter.getIn()))
+					.map(parameter -> {
+						ApiParameter apiParameter = new ApiParameter();
+						apiParameter.setExtra(assemblySwaggerSchema(parameter.getItems(), apiParmeterMap));
+						apiParameter.setName(parameter.getName());
+						apiParameter.setDescription(parameter.getDescription());
+						apiParameter.setRequired(parameter.isRequired());
+						apiParameter.setType(ApiParameterType.get(parameter.getType()));
+
+						//模仿response设置body的field字段
+						apiParameter.setNewFields(assemblySwaggerSchema(parameter.getSchema(), apiParmeterMap));
+
+						return apiParameter;
+					})
+					.collect(Collectors.toList());
+		}
+		return MapUtils.toMap(ApiParameter::getName, parameters);
+	}
+
 	private ApiParameter assemblyApiReponse(SwaggerResponse response, Map<String, ApiParameter> apiParmeterMap) {
 		handleResponse(response);
 		return assemblySwaggerSchema(response.getSchema(), apiParmeterMap);
@@ -165,7 +195,7 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 		}
 		return apiParameters;
 	}
-	
+
 	private List<ApiParameter> assemblyResponses(Map<String, SwaggerResponse> responses, Map<String, ApiParameter> apiParmeterMap){
 		List<ApiParameter> apiParameters = new ArrayList<ApiParameter>();
 		if(! CollectionUtils.isEmpty(responses)) {
@@ -199,7 +229,7 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 		}
 		return null;
 	}
-	
+
 	private ApiParameter assemblyApiParameterField(String name, SwaggerObject property, Map<String, ApiParameter> apiParmeterMap, Map<String, SwaggerObject> definitions){
 		String type = property.getType();
 		if(StringUtils.isEmpty(type)) {
@@ -208,7 +238,7 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 		ApiParameter field = new ApiParameter();
 		field.setDescription(property.getDescription());
 		switch (type) {
-		case "object": 
+		case "object":
 			if(StringUtils.isNotBlank(property.getRef())){
 				field = apiParmeterMap.get(property.getRef());
 				if(field == null) {
@@ -232,20 +262,20 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 		}
 		return field;
 	}
-	
+
 	private ApiParameter assemblySwaggerSchema(SwaggerSchema schema, Map<String, ApiParameter> apiParmeterMap) {
 		if(schema == null) {
 			return null;
 		}
-		
+
 		String type = schema.getType();
 		if(StringUtils.isEmpty(type)) {
 			type = "object";
 		}
-		
+
 		ApiParameter field = new ApiParameter();
 		switch (type) {
-		case "object": 
+		case "object":
 			if(StringUtils.isNotBlank(schema.getRef())) {
 				field = apiParmeterMap.get(schema.getRef());
 			}else if(schema.getAdditionalProperties() != null){
@@ -264,13 +294,13 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 			field.setType(ApiParameterType.get(type));
 			break;
 		}
-		
+
 		return field;
 	}
 
 	private String extractDocs(SwaggerPlugin plugin) throws MockerException, IOException{
 		if(plugin.getPathType() == null){
-			throw new MockerException("Swagger plugin path type is null.");	
+			throw new MockerException("Swagger plugin path type is null.");
 		}
 		switch (plugin.getPathType()) {
 		case HTTP:
@@ -281,7 +311,7 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 			throw new MockerException("Not support swagger plugin path type: " + plugin.getPathType());
 		}
 	}
-	
+
 	private void handleResponse(SwaggerResponse response) {
 		if(response.getSchema() == null && StringUtils.isNotBlank(response.getRef())) {
 			response.setSchema(new SwaggerSchema(response.getRef()));
@@ -290,5 +320,5 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 			response.setRef(response.getSchema().getRef());
 		}
 	}
-	
+
 }
