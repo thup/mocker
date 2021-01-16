@@ -7,7 +7,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@EnableAutoConfiguration
 @SpringBootApplication
 public class Application {
 
@@ -20,7 +19,7 @@ public class Application {
     	ApiContainer.enable(docsApi);
     	ApiContainer.parseApis();
     	ApiContainer.autoRefresh(60 * 1000L);
-    	
+
     	if(args.length > 1) {
     		String dataRepository = args[1];
     		DataContainer.enable(dataRepository);
