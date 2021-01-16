@@ -11,7 +11,7 @@ public class SwaggerApi {
 
 	private String swagger;
 
-	protected Info info;
+	private Info info;
 
 	private String basePath;
 

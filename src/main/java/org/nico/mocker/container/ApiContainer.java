@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nico.mocker.consts.Constants;
 import org.nico.mocker.enums.PluginPathType;
 import org.nico.mocker.model.Api;
+import org.nico.mocker.model.ApiResult;
 import org.nico.mocker.plugins.AbstractPluginHandler;
 import org.nico.mocker.plugins.swagger.SwaggerPlugin;
 import org.nico.mocker.plugins.swagger.SwaggerPluginHandler;
@@ -18,25 +20,25 @@ import org.springframework.util.PathMatcher;
 public class ApiContainer {
 
 	private static Logger log = LoggerFactory.getLogger(ApiContainer.class);
-	
+
 	private static List<Api> apis;
-	
+
 	public static String docsAPi;
-	
+
 	private static AbstractPluginHandler handler = new SwaggerPluginHandler();
-	
+
 	private static PathMatcher antMatcher = new AntPathMatcher();
-	
+
 	public static String enable(String docsAPi) {
 		ApiContainer.docsAPi = docsAPi;
 		log.info("Docs api {}", docsAPi);
 		return ApiContainer.docsAPi;
 	}
-	
+
 	public static boolean isEnable() {
 		return StringUtils.isNotBlank(docsAPi);
 	}
-	
+
 	public static Api getApi(String apiPath, String httpMethod) throws Exception {
 		List<Api> apis = getApis();
 		if(! CollectionUtils.isEmpty(apis)) {
@@ -48,7 +50,7 @@ public class ApiContainer {
 		}
 		return null;
 	}
-	
+
 	public static List<Api> getApis() throws Exception{
 		if(apis == null) {
 			synchronized (ApiContainer.class) {
@@ -59,17 +61,23 @@ public class ApiContainer {
 		}
 		return apis;
 	}
-	
+
 	public static List<Api> parseApis() throws Exception{
+		ApiContainer.apis = parseApiResult(Constants.apiResult_type_response)
+				.getApis();
+		return ApiContainer.apis;
+	}
+
+	public static ApiResult parseApiResult(Integer type) throws Exception{
 		log.info("Parse api doc {}", docsAPi);
 		SwaggerPlugin sp = new SwaggerPlugin();
 		sp.setName("swagger");
 		sp.setPath(docsAPi);
 		sp.setPathType(PluginPathType.HTTP);
-		ApiContainer.apis = handler.extract(sp);
-		return ApiContainer.apis;
+		ApiResult apiResult = handler.parse(sp, type);
+		return apiResult;
 	}
-	
+
 	public static void autoRefresh(Long interval) {
 		Thread refreshThread = new Thread(new Runnable() {
 			@Override

@@ -1,21 +1,16 @@
 package org.nico.mocker.plugins.swagger;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nico.mocker.consts.Constants;
 import org.nico.mocker.enums.ApiParameterType;
 import org.nico.mocker.enums.HttpMethod;
 import org.nico.mocker.exception.MockerException;
 import org.nico.mocker.exception.NotSupportPluginException;
-import org.nico.mocker.model.Api;
-import org.nico.mocker.model.ApiHeader;
-import org.nico.mocker.model.ApiParameter;
-import org.nico.mocker.model.Plugin;
+import org.nico.mocker.model.*;
 import org.nico.mocker.plugins.AbstractPluginHandler;
 import org.nico.mocker.utils.FileUtils;
 import org.nico.mocker.utils.HttpUtils;
@@ -33,18 +28,37 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 
 	@Override
 	public List<Api> extract(Plugin plugin) throws MockerException, IOException{
+		return parse(plugin,Constants.apiResult_type_response).getApis();
+	}
+
+	@Override
+	public ApiResult parse(Plugin plugin) throws MockerException, IOException{
+		return parse(plugin, null);
+	}
+
+	/**
+	 *
+	 * @param plugin
+	 * @param type 1 取请求体 2 取响应体 null值 同时取请求体和响应体 默认为空
+	 * @return
+	 * @throws Exception
+	 */
+	@Override
+	public ApiResult parse(Plugin plugin, Integer type) throws MockerException, IOException{
 		if(! (plugin instanceof SwaggerPlugin)) {
 			throw new NotSupportPluginException();
 		}
 		SwaggerPlugin swaggerPlugin = (SwaggerPlugin) plugin;
-		return extract(swaggerPlugin);
+		return parse(swaggerPlugin, type);
 	}
 
-	private List<Api> extract(SwaggerPlugin plugin) throws MockerException, IOException{
+	private ApiResult parse(SwaggerPlugin plugin, Integer type) throws MockerException, IOException{
 		String docs = extractDocs(plugin);
 		if(StringUtils.isBlank(docs)) {
 			throw new MockerException("docs is blank.");
 		}
+
+		ApiResult apiResult = new ApiResult();
 		List<Api> apis = new ArrayList<Api>();
 
 		Gson gson = new Gson();
@@ -82,23 +96,36 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 						api.setQueryParameters(assemblyQueryParameters(path, definitions, apiParmeterMap));
 						api.setFormParameters(assemblyFormParameters(path, definitions, apiParmeterMap));
 
-						api.setBody(assemblyBodyParameters(path, definitions, apiParmeterMap));
-
-						if(! CollectionUtils.isEmpty(path.getResponses())) {
-							Map<String, ApiParameter> pathResponses = new HashMap<String, ApiParameter>();
-							path.getResponses().forEach((code, response) -> {
-								pathResponses.put(code, assemblyApiReponse(response, apiParmeterMap));
-							});
-							api.setResponses(pathResponses);
+						if(Objects.isNull(type)
+							|| (Objects.nonNull(type)
+								&& Constants.apiResult_type_request.equals(type))){
+							api.setBody(assemblyBodyParameters(path, definitions, apiParmeterMap));
 						}
+
+						if(Objects.isNull(type)
+								|| (Objects.nonNull(type)
+								&&Constants.apiResult_type_response.equals(type))){
+							if(! CollectionUtils.isEmpty(path.getResponses())) {
+								Map<String, ApiParameter> pathResponses = new HashMap<String, ApiParameter>();
+								path.getResponses().forEach((code, response) -> {
+									pathResponses.put(code, assemblyApiReponse(response, apiParmeterMap));
+								});
+								api.setResponses(pathResponses);
+							}
+						}
+
 						apis.add(api);
 					});
 				}
 			});
 		}
 
-		System.out.println("== " + gson.toJson(apis));
-		return apis;
+		apiResult.setInfo(swaggerApi.getInfo());
+		apiResult.setHost(swaggerApi.getHost());
+		apiResult.setBasePath(swaggerApi.getBasePath());
+		apiResult.setApis(apis);
+		System.out.println("== " + gson.toJson(apiResult));
+		return apiResult;
 	}
 
 	private List<ApiHeader> assemblyApiHeader(SwaggerPath path, Map<String, SwaggerObject> definitions){
@@ -160,7 +187,7 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 					.stream()
 					.filter(parameter -> "body".equals(parameter.getIn()))
 					.map(parameter -> {
-						ApiParameter apiParameter = new ApiParameter();
+						/*ApiParameter apiParameter = new ApiParameter();
 						apiParameter.setExtra(assemblySwaggerSchema(parameter.getItems(), apiParmeterMap));
 						apiParameter.setName(parameter.getName());
 						apiParameter.setDescription(parameter.getDescription());
@@ -169,7 +196,9 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 
 						//模仿response设置body的field字段
 						apiParameter.setNewFields(assemblySwaggerSchema(parameter.getSchema(), apiParmeterMap));
+*/
 
+						ApiParameter apiParameter = assemblySwaggerSchema(parameter.getSchema(), apiParmeterMap);
 						return apiParameter;
 					})
 					.collect(Collectors.toList());
