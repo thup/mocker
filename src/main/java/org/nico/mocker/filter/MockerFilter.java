@@ -37,7 +37,7 @@ public class MockerFilter implements Filter{
 		}
 		if("/m/apis".equalsIgnoreCase(requestUrl)) {
 			chain.doFilter(httpRequest, response);
-		}else if(requestUrl.startsWith("/data")
+		}else if(requestUrl.startsWith("/config")
 				&& Objects.nonNull(swaggerDataKey)&&swaggerDataKey.equalsIgnoreCase("Y")
 		) {
 			chain.doFilter(httpRequest, response);

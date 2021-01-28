@@ -96,6 +96,12 @@ public class SwaggerPluginHandler implements AbstractPluginHandler{
 						api.setQueryParameters(assemblyQueryParameters(path, definitions, apiParmeterMap));
 						api.setFormParameters(assemblyFormParameters(path, definitions, apiParmeterMap));
 
+						api.setTags(path.getTags());
+						api.setSummary(path.getSummary());
+						api.setDescription(path.getDescription());
+						api.setConsumes(path.getConsumes());
+						api.setProduces(path.getProduces());
+
 						if(Objects.isNull(type)
 							|| (Objects.nonNull(type)
 								&& Constants.apiResult_type_request.equals(type))){

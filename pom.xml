@@ -20,7 +20,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.compiler.argument />
 		<java.test.compiler.argument>${java.compiler.argument}</java.test.compiler.argument>
-		
+
 		<mybatis.version>1.3.1</mybatis.version>
         <ourbatis.version>1.0.8</ourbatis.version>
         <noson.version>1.1.4</noson.version>
@@ -32,14 +32,14 @@
 	</properties>
 
 	<dependencies>
-		
+
 		<!-- junit -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
@@ -49,7 +49,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
@@ -60,13 +60,13 @@
             <artifactId>fastjson</artifactId>
             <version>1.2.62</version>
         </dependency>
-        
+
         <dependency>
 		    <groupId>com.google.code.gson</groupId>
 		    <artifactId>gson</artifactId>
 		    <version>2.8.6</version>
 		</dependency>
-        
+
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-swagger2</artifactId>
@@ -84,22 +84,23 @@
 		    <artifactId>defender</artifactId>
 		    <version>${defender.version}</version>
 		</dependency>
-		
+
 		<dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>3.11.0</version>
         </dependency>
+
 	</dependencies>
 
 	<build>

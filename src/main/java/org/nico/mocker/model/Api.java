@@ -15,6 +15,16 @@ public class Api {
 	 */
 	private String path;
 
+	private List<String> tags;
+
+	private String summary;
+
+	private String description;
+
+	private List<String> consumes;
+
+	private List<String> produces;
+
 	/**
 	 * Api desc.
 	 */
