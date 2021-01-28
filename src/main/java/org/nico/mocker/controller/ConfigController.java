@@ -39,6 +39,17 @@ public class ConfigController {
 		}
 	}
 
+	/**
+	 *  http://127.0.0.1:10088/config/start?swagger-data-key=Y
+	 *
+	 *  {
+	 *     "swaggerApiUrl":"http://127.0.0.1:8093/v2/api-docs",
+	 *     "swaggerSign":"test111"
+	 * }
+	 * @param startDto
+	 * @return
+	 * @throws Exception
+	 */
 	@PostMapping("/start")
 	public ResultDto start(@RequestBody StartDto startDto) throws Exception {
 
@@ -46,6 +57,11 @@ public class ConfigController {
 		return ResultDto.success();
 	}
 
+	/**
+	 *  http://127.0.0.1:10088/config/apiData?swagger-data-key=Y&swaggerSign=ceshiren
+	 * @param swaggerSign
+	 * @return
+	 */
 	@GetMapping("/apiData")
 	public ResultDto getData(
 			@RequestParam(value = "swaggerSign", required = false) String swaggerSign){
